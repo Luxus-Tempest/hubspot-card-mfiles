@@ -18,7 +18,9 @@ app.use(cookieParser());
 app.use("/api", apiRoutes);
 
 // Start server
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT} localhost:${PORT}`);
-});
+// const PORT = process.env.PORT || 4000;
+// app.listen(PORT, () => {
+//   console.log(`🚀 Server running on port ${PORT} localhost:${PORT}`);
+// });
+
+export default app;
