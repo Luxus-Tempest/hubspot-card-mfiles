@@ -1,18 +1,16 @@
 {
-    "version": 2,
-    "buildCommand": "tsc",
-    "outputDirectory": "dist",
-    "nodeVersion": "18.x",  
-    "functions": {
-      "api/index.ts": {
-        "runtime": "@vercel/node@3.0.0"
-      }
-    },
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "api/index.ts"
-      }
-    ]
-  }
-  
+  "version": 2,
+  "buildCommand": "tsc",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/index.ts": {
+      "runtime": "@vercel/node@3.0.0"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/index.ts"
+    }
+  ]
+}
