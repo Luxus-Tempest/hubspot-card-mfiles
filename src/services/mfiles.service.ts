@@ -7,23 +7,24 @@ export interface LoginPayload {
   vaultGuid: string;
 }
 
-const HsObjectToProperty: Record<string, { label: string; property: number }> = {
-  "0-1": {
-    label: "Contact property in MFile",
-    property: 1038,
-  },
-  "0-2": {
-    label: "Company property in MFile",
-    property: 1037,
-  }, // à complèter after avc les otres obj huspot
-};
-
+const HsObjectToProperty: Record<string, { label: string; property: number }> =
+  {
+    "0-1": {
+      label: "Contact property in MFile",
+      property: 1038,
+    },
+    "0-2": {
+      label: "Company property in MFile",
+      property: 1037,
+    }, // à complèter after avc les otres obj huspot
+  };
 
 export class MFilesService {
   private readonly http: AxiosInstance;
 
   constructor(
-    baseURL: string = process.env.MFILES_BASE_URL ?? "http://209.209.40.100:85/REST",
+    baseURL: string = process.env.MFILES_BASE_URL ??
+      "http://209.209.40.100:85/REST",
     timeout: number = Number(process.env.MFILES_TIMEOUT ?? 15000)
   ) {
     this.http = axios.create({
@@ -46,17 +47,28 @@ export class MFilesService {
     return { token };
   }
 
-  async getObjectByHsIDs(token: string,  hsObjectID: string , hsObjItemID: string): Promise<unknown> {
-    const { data } = await this.http.get(`objects.aspx?p1030=${hsObjItemID}&p1039=${hsObjectID}`, {
-      headers: this.authHeaders(token),
-    });
+  async getObjectByHsIDs(
+    token: string,
+    hsObjectID: string,
+    hsObjItemID: string
+  ): Promise<unknown> {
+    const { data } = await this.http.get(
+      `objects.aspx?p1030=${hsObjItemID}&p1039=${hsObjectID}`,
+      {
+        headers: this.authHeaders(token),
+      }
+    );
     return data;
   }
 
-    async getObjectWithDocs(token: string,  hsObjectID: string , hsObjItemID: string): Promise<unknown> {
+  async getObjectWithDocs(
+    token: string,
+    hsObjectID: string,
+    hsObjItemID: string
+  ): Promise<unknown> {
     const result = await this.getObjectByHsIDs(token, hsObjectID, hsObjItemID);
 
-     if (
+    if (
       !result ||
       typeof result !== "object" ||
       !Array.isArray((result as any).Items) ||
@@ -67,19 +79,34 @@ export class MFilesService {
     }
 
     const targetObjectID = (result as any).Items[0].ObjVer.ID;
-    const targetProperty = HsObjectToProperty[hsObjectID].property
+    const targetProperty = HsObjectToProperty[hsObjectID].property;
     //http://209.209.40.100:85/REST/objects/0?p1038=2&P100=4 le contact(class 4) de ID 2 | j'avais oublié
-     const { data } = await this.http.get(`objects/0?p${targetProperty}=${targetObjectID}`, {
-      headers: this.authHeaders(token),
-    });
+    const { data } = await this.http.get(
+      `objects/0?p${targetProperty}=${targetObjectID}`,
+      {
+        headers: this.authHeaders(token),
+      }
+    );
+    
+    const clean = data.Items.map((item: any) => ({
+      title: item.Title,
+      displayId: item.DisplayID,
+      objectId: item.ObjVer.ID,
+      files: item.Files.map((file: any) => ({
+        name: file.Name,
+        extension: file.Extension,
+        size: file.Size,
+        id: file.ID,
+        lastAccessedByMe: item.LastAccessedByMe,
+      })),
+    }));
+
     return {
       mfId: targetObjectID,
-      data: data
+      documents: clean,
     };
   }
 
-
-  
   async getDocsByMfID(token: string, ID: string): Promise<unknown> {
     const { data } = await this.http.get(`objects/0/${ID}`, {
       headers: this.authHeaders(token),
@@ -120,7 +147,7 @@ export class MFilesService {
             DataType: 1,
             Value: docTitle,
           },
-        }
+        },
       ],
       Files: [
         {
