@@ -18,24 +18,14 @@ const handleError = (error: unknown, res: Response) => {
 };
 
 const requireToken = (req: Request, res: Response): string | undefined => {
-  const token = req.header("X-Authentication");
-  if (!token) {
+  const token = req.header("X-Authentication") || req.query.token;
+  if (!token && typeof token === undefined) {
     res.status(400).json({ message: "X-Authentication header is required" });
-    return undefined;
+    return typeof token === "string" ? token : undefined;
   }
-  return token;
+  return typeof token === "string" ? token : undefined;
 };
 
-const targetedPropertyDef: Record<string, { label:string, property: number}> = {
-    "0-1": {
-    label: "Contact property in MFile",
-    property: 1038,
-  },
-  "0-2": {
-    label: "Company property in MFile",
-    property: 1037,
-  },
-}
 
 export class MFilesController {
   login = async (req: Request, res: Response) => {
