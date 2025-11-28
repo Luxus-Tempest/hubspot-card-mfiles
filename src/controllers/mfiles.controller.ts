@@ -89,46 +89,9 @@ export class MFilesController {
     }
   };
 
-  // uploadDocument = [
-  //   upload.single("document"),
-  //   async (req: Request, res: Response) => {
-  //     const token = requireToken(req, res);
-  //     if (!token) {
-  //       return;
-  //     }
-
-  //     const file = req.file;
-  //     const { docTitle, targetObjectID } = req.body ?? {};
-
-  //     if (!file) {
-  //       res.status(400).json({ message: "document file is required" });
-  //       return;
-  //     }
-
-  //     if (!docTitle || req.params.hsObjectID ) {
-  //       res.status(400).json({ message: "docTitle and hsObjectID and mfObjectID are required" });
-  //       return;
-  //     }
-
-  //     try {
-  //       const data = await mFilesService.uploadDocument(
-  //         token,
-  //         file,
-  //         docTitle,
-  //         targetObjectID,
-  //         req.params.hsObjectID
-  //       );
-  //       res.json(data);
-  //     } catch (error) {
-  //       handleError(error, res);
-  //     }
-  //   },
-  // ];
-
   uploadDocument = [
   upload.single("document"),
   async (req: Request, res: Response) => {
-    // return res.status(200).json({ message: "MESSAGE" });
     const token = requireToken(req, res);
     if (!token) {
       return;

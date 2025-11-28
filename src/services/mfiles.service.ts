@@ -87,7 +87,8 @@ export class MFilesService {
         headers: this.authHeaders(token),
       }
     );
-    
+    return data;
+
     const clean = data.Items.map((item: any) => ({
       title: item.Title,
       displayId: item.DisplayID,
