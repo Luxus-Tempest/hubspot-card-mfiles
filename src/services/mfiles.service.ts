@@ -87,9 +87,8 @@ export class MFilesService {
         headers: this.authHeaders(token),
       }
     );
-    return data;
 
-    const clean = data.Items.map((item: any) => ({
+    const clean = data.Items ? data.Items.map((item: any) => ({
       title: item.Title,
       displayId: item.DisplayID,
       objectId: item.ObjVer.ID,
@@ -100,7 +99,7 @@ export class MFilesService {
         id: file.ID,
         lastAccessedByMe: item.LastAccessedByMe,
       })),
-    }));
+    })) : [];
 
     return {
       mfId: targetObjectID,
