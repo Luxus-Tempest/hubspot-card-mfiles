@@ -210,7 +210,7 @@ export class MFilesService {
   }
 
   async deleteDocument(token: string, docId: string): Promise<unknown> {
-    const { data } = await this.http.get(`objects/0/${docId}/delete`, {
+    const { data } = await this.http.post(`objects/0/${docId}/delete`, {
       headers: this.authHeaders(token),
     });
     return data;
