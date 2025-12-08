@@ -88,18 +88,20 @@ export class MFilesService {
       }
     );
 
-    const clean = data.Items ? data.Items.map((item: any) => ({
-      title: item.Title,
-      displayId: item.DisplayID,
-      objectId: item.ObjVer.ID,
-      files: item.Files.map((file: any) => ({
-        name: file.Name,
-        extension: file.Extension,
-        size: file.Size,
-        id: file.ID,
-        lastAccessedByMe: item.LastAccessedByMe,
-      })),
-    })) : [];
+    const clean = data.Items
+      ? data.Items.map((item: any) => ({
+          title: item.Title,
+          displayId: item.DisplayID,
+          objectId: item.ObjVer.ID,
+          files: item.Files.map((file: any) => ({
+            name: file.Name,
+            extension: file.Extension,
+            size: file.Size,
+            id: file.ID,
+            lastAccessedByMe: item.LastAccessedByMe,
+          })),
+        }))
+      : [];
 
     return {
       mfId: targetObjectID,
@@ -204,6 +206,13 @@ export class MFilesService {
       },
     });
 
+    return data;
+  }
+
+  async deleteDocument(token: string, docId: string): Promise<unknown> {
+    const { data } = await this.http.get(`objects/0/${docId}/delete`, {
+      headers: this.authHeaders(token),
+    });
     return data;
   }
 

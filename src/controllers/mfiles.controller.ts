@@ -173,6 +173,23 @@ export class MFilesController {
       handleError(error, res);
     }
   };
+
+  deleteDocument = async (req: Request, res: Response) => {
+    const token = requireToken(req, res);
+    if (!token) {
+      return;
+    }
+
+    try {
+      const result = await mFilesService.deleteDocument(
+        token,
+        req.params.docId
+      );
+      res.json(result);
+    } catch (error) {
+      handleError(error, res);
+    }
+  };
 }
 
 export const mFilesController = new MFilesController();
