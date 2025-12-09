@@ -1,0 +1,73 @@
+import { Client } from "@hubspot/api-client";
+import { SimplePublicObjectInput } from "@hubspot/api-client/lib/codegen/crm/companies";
+import dotenv from "dotenv";
+import { Files } from "../types/hs.types";
+
+dotenv.config();
+
+if (!process.env.HUBSPOT_PRIVATE_APP_TOKEN) {
+  throw new Error(
+    "HUBSPOT_PRIVATE_APP_TOKEN is not defined in your environment variables"
+  );
+}
+
+const hs = new Client({
+  accessToken: process.env.HUBSPOT_PRIVATE_APP_TOKEN,
+});
+
+class HsService {
+  async getAllFiles() {
+    const files = await hs.files.filesApi.doSearch();
+    return files;
+  }
+
+  async getCompanyById(id: string) {
+    const company = await hs.crm.companies.basicApi.getById(id, ["files"]);
+    return company;
+  }
+
+  async updateCompany(companyId: string, files: string) {
+    const filesToStored: SimplePublicObjectInput = {
+      properties: { files: files },
+    };
+    const company = await hs.crm.companies.basicApi.update(
+      companyId,
+      filesToStored
+    );
+    return company;
+  }
+
+  async syncCompanyFilesWithFilesManger(companyId: string) {
+    const company = await this.getCompanyById(companyId);
+
+    if (!company) {
+      return { success: false, message: "Company not found" };
+    }
+
+    let filesList: Files = [];
+
+    if (company.properties.files) {
+      try {
+        filesList = JSON.parse(company.properties.files);
+      } catch (e) {
+        filesList = [];
+      }
+    }
+
+    // 3. Pull actual files from HubSpot
+    const hsFiles = await this.getAllFiles();
+    const fileManagerIds = hsFiles.results.map((f: any) => f.id);
+
+    // 4. Keep only files that still exist in HubSpot File Manager
+    const filteredFiles = filesList.filter((f) =>
+      fileManagerIds.includes(f.id)
+    );
+    // 5. Save updated list
+    return await this.updateCompany(
+      companyId,
+      JSON.stringify(filteredFiles)
+    );
+  }
+}
+
+export const hsService = new HsService();

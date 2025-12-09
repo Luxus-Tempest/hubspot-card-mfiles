@@ -19,22 +19,12 @@ const handleError = (error, res) => {
     res.status(500).json({ message });
 };
 const requireToken = (req, res) => {
-    const token = req.header("X-Authentication");
-    if (!token) {
+    const token = req.header("X-Authentication") || req.query.token;
+    if (!token && typeof token === undefined) {
         res.status(400).json({ message: "X-Authentication header is required" });
-        return undefined;
+        return typeof token === "string" ? token : undefined;
     }
-    return token;
-};
-const targetedPropertyDef = {
-    "0-1": {
-        label: "Contact property in MFile",
-        property: 1038,
-    },
-    "0-2": {
-        label: "Company property in MFile",
-        property: 1037,
-    },
+    return typeof token === "string" ? token : undefined;
 };
 class MFilesController {
     constructor() {
@@ -93,41 +83,9 @@ class MFilesController {
                 handleError(error, res);
             }
         };
-        // uploadDocument = [
-        //   upload.single("document"),
-        //   async (req: Request, res: Response) => {
-        //     const token = requireToken(req, res);
-        //     if (!token) {
-        //       return;
-        //     }
-        //     const file = req.file;
-        //     const { docTitle, targetObjectID } = req.body ?? {};
-        //     if (!file) {
-        //       res.status(400).json({ message: "document file is required" });
-        //       return;
-        //     }
-        //     if (!docTitle || req.params.hsObjectID ) {
-        //       res.status(400).json({ message: "docTitle and hsObjectID and mfObjectID are required" });
-        //       return;
-        //     }
-        //     try {
-        //       const data = await mFilesService.uploadDocument(
-        //         token,
-        //         file,
-        //         docTitle,
-        //         targetObjectID,
-        //         req.params.hsObjectID
-        //       );
-        //       res.json(data);
-        //     } catch (error) {
-        //       handleError(error, res);
-        //     }
-        //   },
-        // ];
         this.uploadDocument = [
             upload.single("document"),
             async (req, res) => {
-                // return res.status(200).json({ message: "MESSAGE" });
                 const token = requireToken(req, res);
                 if (!token) {
                     return;
@@ -180,6 +138,19 @@ class MFilesController {
             try {
                 const data = await mfiles_service_1.mFilesService.getDocumentProps(token, req.params.docId);
                 res.json(data);
+            }
+            catch (error) {
+                handleError(error, res);
+            }
+        };
+        this.deleteDocument = async (req, res) => {
+            const token = requireToken(req, res);
+            if (!token) {
+                return;
+            }
+            try {
+                const result = await mfiles_service_1.mFilesService.deleteDocument(token, req.params.docId);
+                res.json(result);
             }
             catch (error) {
                 handleError(error, res);

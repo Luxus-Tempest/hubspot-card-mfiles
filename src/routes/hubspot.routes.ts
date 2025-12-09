@@ -1,16 +1,17 @@
 import axios from "axios";
 import { Router } from "express";
+import { hsFilesController } from "../controllers/hubspot.controller";
 
 const router = Router();
 
-router.get('/api/files', async (req, res) => {
+router.get("/api/files", async (req, res) => {
   try {
     const accessToken = process.env.HUBSPOT_PRIVATE_APP_TOKEN;
 
     if (!accessToken) {
       return res.status(500).json({
         success: false,
-        error: 'HUBSPOT_PRIVATE_APP_TOKEN not configured',
+        error: "HUBSPOT_PRIVATE_APP_TOKEN not configured",
       });
     }
 
@@ -31,7 +32,7 @@ router.get('/api/files', async (req, res) => {
         const response = await axios.get(url, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
 
@@ -47,7 +48,7 @@ router.get('/api/files', async (req, res) => {
           hasMore = false;
         }
       } catch (paginationError) {
-        console.error('Erreur lors de la pagination:', paginationError.message);
+        console.error("Erreur lors de la pagination:", paginationError.message);
         hasMore = false;
       }
     }
@@ -58,12 +59,27 @@ router.get('/api/files', async (req, res) => {
       total: allFiles.length,
     });
   } catch (error) {
-    console.error('Erreur lors de la récupération des fichiers:', error.message);
+    console.error(
+      "Erreur lors de la récupération des fichiers:",
+      error.message
+    );
     res.status(500).json({
       success: false,
-      error: error.message || 'Erreur lors de la récupération des fichiers',
+      error: error.message || "Erreur lors de la récupération des fichiers",
     });
   }
 });
+
+router.get("/files", hsFilesController.getAllFiles);
+router.get("/company/:companyID", hsFilesController.getCompanyById);
+router.put("/company/:companyID", hsFilesController.updateCompany);
+
+/**
+ * Simuler une synchro au cas un fichier est supprimé dans Files manager, il doit l'être aussi dans le l'association
+ */
+router.use(
+  "/sync-company-files/:companyID",
+  hsFilesController.syncCompanyFilesWithFilesManger
+);
 
 export default router;

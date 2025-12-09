@@ -4,7 +4,7 @@ import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import apiRoutes from "./routes/api.routes";
-import testRoute from "./routes/test.routes";
+import testRoute from "./routes/hubspot.routes";
 
 dotenv.config();
 const app = express();
@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes
-app.use("/", testRoute);
+app.use("/api/hs", testRoute);
 app.use("/api", apiRoutes);
 
 const PORT = process.env.PORT || 3003;

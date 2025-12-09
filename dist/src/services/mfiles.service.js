@@ -17,7 +17,8 @@ const HsObjectToProperty = {
     }, // à complèter after avc les otres obj huspot
 };
 class MFilesService {
-    constructor(baseURL = process.env.MFILES_BASE_URL ?? "http://209.209.40.100:85/REST", timeout = Number(process.env.MFILES_TIMEOUT ?? 15000)) {
+    constructor(baseURL = process.env.MFILES_BASE_URL ??
+        "http://209.209.40.100:85/REST", timeout = Number(process.env.MFILES_TIMEOUT ?? 15000)) {
         this.http = axios_1.default.create({
             baseURL: baseURL.endsWith("/") ? baseURL : `${baseURL}/`,
             timeout,
@@ -52,9 +53,23 @@ class MFilesService {
         const { data } = await this.http.get(`objects/0?p${targetProperty}=${targetObjectID}`, {
             headers: this.authHeaders(token),
         });
+        const clean = data.Items
+            ? data.Items.map((item) => ({
+                title: item.Title,
+                displayId: item.DisplayID,
+                objectId: item.ObjVer.ID,
+                files: item.Files.map((file) => ({
+                    name: file.Name,
+                    extension: file.Extension,
+                    size: file.Size,
+                    id: file.ID,
+                    lastAccessedByMe: item.LastAccessedByMe,
+                })),
+            }))
+            : [];
         return {
             mfId: targetObjectID,
-            data: data
+            documents: clean,
         };
     }
     async getDocsByMfID(token, ID) {
@@ -89,7 +104,7 @@ class MFilesService {
                         DataType: 1,
                         Value: docTitle,
                     },
-                }
+                },
             ],
             Files: [
                 {
@@ -130,6 +145,12 @@ class MFilesService {
                 ...formData.getHeaders(),
                 ...this.authHeaders(token),
             },
+        });
+        return data;
+    }
+    async deleteDocument(token, docId) {
+        const { data } = await this.http.post(`objects/0/${docId}/latest.aspx?_method=DELETE&allVersions=true`, {}, {
+            headers: this.authHeaders(token),
         });
         return data;
     }
