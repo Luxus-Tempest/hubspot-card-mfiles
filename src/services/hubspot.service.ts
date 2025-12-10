@@ -21,11 +21,6 @@ class HsService {
     return files;
   }
 
-  async getCompanyById(id: string) {
-    const company = await hs.crm.companies.basicApi.getById(id, ["files"]);
-    return company;
-  }
-
   async updateCompany(companyId: string, files: string) {
     const filesToStored: SimplePublicObjectInput = {
       properties: { files: files },
@@ -63,10 +58,16 @@ class HsService {
       fileManagerIds.includes(f.id)
     );
     // 5. Save updated list
-    return await this.updateCompany(
-      companyId,
-      JSON.stringify(filteredFiles)
-    );
+    return await this.updateCompany(companyId, JSON.stringify(filteredFiles));
+  }
+
+  async getCompanyById(id: string) {
+    const company = await hs.crm.companies.basicApi.getById(id, ["files"]);
+    return company;
+  }
+  async getSynchronizedCompanyById(id: string) {
+    const results = await this.syncCompanyFilesWithFilesManger(id);
+    return results;
   }
 }
 

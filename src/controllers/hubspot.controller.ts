@@ -19,6 +19,15 @@ class HsFilesController {
       next(error);
     }
   };
+  getSynchronizedCompanyById = async (req, res, next) => {
+    try {
+      const ID = req.params.companyID;
+      const company = await hsService.getSynchronizedCompanyById(ID);
+      res.json(company);
+    } catch (error) {
+      next(error);
+    }
+  };
 
   updateCompany = async (req, res, next) => {
     try {

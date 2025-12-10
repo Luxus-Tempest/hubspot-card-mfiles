@@ -71,7 +71,8 @@ router.get("/api/files", async (req, res) => {
 });
 
 router.get("/files", hsFilesController.getAllFiles);
-router.get("/company/:companyID", hsFilesController.getCompanyById);
+// router.get("/company/:companyID", hsFilesController.getCompanyById);
+router.get("/company/:companyID", hsFilesController.getSynchronizedCompanyById);
 router.put("/company/:companyID", hsFilesController.updateCompany);
 
 /**
