@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 import FormData from "form-data";
+import { MFIDs } from "../types/MFIDs";
 
 export interface LoginPayload {
   username: string;
@@ -228,6 +229,179 @@ export class MFilesService {
   private authHeaders(token: string) {
     return { "X-Authentication": token };
   }
+
+  async updateCompany(
+    token: string,
+    mfCompanyId: string,
+    company: {
+      name?: string;
+      domain?: string;
+      phone?: string;
+      address?: string;
+      // hsObjectId: string;
+    }
+  ): Promise<number> {
+    const properties = [
+      {
+        PropertyDef: MFIDs.Prop.nomOuTitre,
+        TypedValue: {
+          DataType: 1,
+          Value: company.name || company.domain || "Unknown",
+        },
+      },
+      // {
+      //   PropertyDef: MFIDs.Prop.hsObjectId,
+      //   TypedValue: {
+      //     DataType: 1,
+      //     Value: company.hsObjectId,
+      //   },
+      // },
+      // {
+      //   PropertyDef: MFIDs.Prop.hsObjectType,
+      //   TypedValue: {
+      //     DataType: 1,
+      //     Value: "0-2", // HubSpot Company
+      //   },
+      // },
+      {
+        PropertyDef: MFIDs.Prop.adresse,
+        TypedValue: {
+          DataType: 1,
+          Value: company.address || "",
+        },
+      },
+      {
+        PropertyDef: MFIDs.Prop.domain,
+        TypedValue: {
+          DataType: 1,
+          Value: company.domain || "Unknown",
+        },
+      },
+      {
+        PropertyDef: MFIDs.Prop.phone,
+        TypedValue: {
+          DataType: 1,
+          Value: company.phone || "",
+        },
+      },
+    ];
+
+    const { data } = await this.http.post(
+      `objects/${MFIDs.Obj.Company}/${mfCompanyId}/latest/properties.aspx`,
+      properties,
+      {
+        headers: this.authHeaders(token),
+      }
+    );
+
+    return data.ObjVer.ID;
+  }
+
+  async checkIfCompanyExists(
+    token: string,
+    hsObjectId: string
+  ): Promise<{ exists: boolean; mfId?: number }> {
+    const { data } = await this.http.get(
+      `objects/${MFIDs.Obj.Company}?p${MFIDs.Prop.hsObjectId}=${hsObjectId}&p${MFIDs.Prop.hsObjectType}=0-2`,
+      {
+        headers: this.authHeaders(token),
+      }
+    );
+
+    const exists =
+      data?.Items && Array.isArray(data.Items) && data.Items.length > 0;
+
+    if (!exists) {
+      return { exists: false };
+    }
+
+    return {
+      exists: true,
+      mfId: data.Items[0].ObjVer.ID,
+    };
+  }
+
+  async createCompany(
+    token: string,
+    company: {
+      name?: string;
+      domain?: string;
+      phone?: string;
+      address?: string;
+      hs_object_id?: string;
+    }
+  ): Promise<number> {
+    const objectCreationInfo = {
+      PropertyValues: [
+        {
+          PropertyDef: MFIDs.Prop.nomOuTitre,
+          TypedValue: {
+            DataType: 1,
+            Value: company.name || company.domain || "Unknown",
+          },
+        },
+        {
+          PropertyDef: MFIDs.Prop.hsObjectId,
+          TypedValue: {
+            DataType: 1,
+            Value: company.hs_object_id,
+          },
+        },
+        {
+          PropertyDef: MFIDs.Prop.hsObjectType,
+          TypedValue: {
+            DataType: 1,
+            Value: "0-2",
+          },
+        },
+        {
+          PropertyDef: MFIDs.Prop.adresse,
+          TypedValue: {
+            DataType: 1,
+            Value: company.address || "",
+          },
+        },
+        {
+          PropertyDef: MFIDs.Prop.domain,
+          TypedValue: {
+            DataType: 1,
+            Value: company.domain || "Unknown",
+          },
+        },
+        {
+          PropertyDef: MFIDs.Prop.phone,
+          TypedValue: {
+            DataType: 1,
+            Value: company.phone || "",
+          },
+        },
+        {
+          // CLASS
+          PropertyDef: 100,
+          TypedValue: {
+            DataType: 9,
+            Lookup: {
+              Item: MFIDs.Class.Company,
+            },
+          },
+        },
+      ],
+    };
+  
+    const { data } = await this.http.post(
+      `objects/${MFIDs.Obj.Company}`,
+      objectCreationInfo,
+      {
+        headers: {
+          ...this.authHeaders(token),
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  
+    return data.ObjVer.ID;
+  }
+  
 }
 
 export const mFilesService = new MFilesService();

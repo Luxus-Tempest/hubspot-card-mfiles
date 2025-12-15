@@ -83,4 +83,9 @@ router.use(
   hsFilesController.syncCompanyFilesWithFilesManger
 );
 
+router.use(
+  "/sync-company/:companyID",
+  hsFilesController.synchronizeCompany
+);
+
 export default router;

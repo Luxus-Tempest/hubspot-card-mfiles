@@ -46,9 +46,19 @@ class HsFilesController {
   syncCompanyFilesWithFilesManger = async (req, res, next) => {
     try {
       const companyId = req.params.companyID;
-      const company = await hsService.syncCompanyFilesWithFilesManger(
-        companyId,
-      );
+      const company =
+        await hsService.syncCompanyFilesWithFilesManger(companyId);
+      res.json(company);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  synchronizeCompany = async (req, res, next) => {
+    const mfToken = req.query.mfToken;
+    try {
+      const companyId = req.params.companyID;
+      const company = await hsService.synchronizeCompany(companyId, mfToken);
       res.json(company);
     } catch (error) {
       next(error);

@@ -1,7 +1,11 @@
 import { Client } from "@hubspot/api-client";
-import { SimplePublicObjectInput } from "@hubspot/api-client/lib/codegen/crm/companies";
+import {
+  SimplePublicObjectInput,
+  SimplePublicObjectWithAssociations,
+} from "@hubspot/api-client/lib/codegen/crm/companies";
 import dotenv from "dotenv";
 import { Files } from "../types/hs.types";
+import { mFilesService } from "./mfiles.service";
 
 dotenv.config();
 
@@ -68,6 +72,56 @@ class HsService {
   async getSynchronizedCompanyById(id: string) {
     const results = await this.syncCompanyFilesWithFilesManger(id);
     return results;
+  }
+
+  async synchronizeCompany(companyId: string, mfToken: string) {
+    let company: SimplePublicObjectWithAssociations;
+
+    try {
+      company = await hs.crm.companies.basicApi.getById(companyId, [
+        "name",
+        "domain",
+        "phone",
+        "address",
+      ]);
+    } catch (err: any) {
+      if (err?.code === 404 || err?.response?.status === 404) {
+        return {
+          success: false,
+          message: "Company not found in HubSpot",
+        };
+      }
+
+      // Autre erreur HubSpot = vraie erreur
+      // throw err;
+    }
+
+    if (!company) {
+      return { success: false, message: "Company not found" };
+    }
+    const checkedCompany = await mFilesService.checkIfCompanyExists(
+      mfToken,
+      company.id
+    );
+
+    let mfId: number;
+    company;
+
+    if (!checkedCompany.exists) {
+      mfId = await mFilesService.createCompany(mfToken, company.properties);
+    } else {
+      mfId = await mFilesService.updateCompany(
+        mfToken,
+        checkedCompany.mfId!.toString(),
+        company.properties
+      );
+    }
+
+    return {
+      success: true,
+      action: checkedCompany.exists ? "updated" : "created",
+      mfId,
+    };
   }
 }
 
