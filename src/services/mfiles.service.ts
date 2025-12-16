@@ -143,7 +143,7 @@ export class MFilesService {
           PropertyDef: 100,
           TypedValue: {
             DataType: 9,
-            Lookup: { Item: 5, Version: -1 },
+            Lookup: { Item: MFIDs.Class.AutresDocuments, Version: -1 },
           },
         },
         {

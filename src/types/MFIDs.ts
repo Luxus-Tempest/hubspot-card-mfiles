@@ -9,7 +9,7 @@ export const MFIDs = {
     Company: 3,
     CompaniesDocs: 4,
     ContactsDocs: 5,
-    Document: 1, // Autres documents
+    AutresDocuments: 1, // Autres documents
   },
   ValueLists: {
     // Pour l'instant vide comme dans ton code C#
