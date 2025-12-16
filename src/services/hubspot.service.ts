@@ -78,12 +78,13 @@ class HsService {
     let company: SimplePublicObjectWithAssociations;
 
     try {
-      company = await hs.crm.companies.basicApi.getById(companyId, [
-        "name",
-        "domain",
-        "phone",
-        "address",
-      ]);
+      company = await hs.crm.companies.basicApi.getById(
+        companyId,
+        ["name", "domain", "phone", "address"],
+        undefined,
+        ["0-1"]
+      );
+      console.log(company);
     } catch (err: any) {
       if (err?.code === 404 || err?.response?.status === 404) {
         return {
@@ -105,7 +106,6 @@ class HsService {
     );
 
     let mfId: number;
-    company;
 
     if (!checkedCompany.exists) {
       mfId = await mFilesService.createCompany(mfToken, company.properties);
@@ -117,10 +117,53 @@ class HsService {
       );
     }
 
+    const mfCompanyId = mfId;
+
+    //hubspot company's contacts ids
+    const contactIds =
+      company.associations?.contacts?.results
+        ?.map((c) => c.id)
+        ?.filter((v, i, a) => a.indexOf(v) === i) ?? [];
+
+    if (contactIds.length > 0) {
+      for (const hsContactId of contactIds) {
+        let contact: SimplePublicObjectWithAssociations;
+        try {
+          contact = await hs.crm.contacts.basicApi.getById(hsContactId);
+        } catch (err) {
+          console.log("ERROR : ", err);
+        }
+        const check = await mFilesService.checkIfContactExists(
+          mfToken,
+          contact.id
+        );
+        // return { "check contact : ": check };
+
+        if (!check.exists) {
+          await mFilesService.createContact(
+            mfToken,
+            {
+              ...contact.properties,
+              hs_object_id: contact.id,
+            },
+            mfCompanyId
+          );
+        } else {
+          await mFilesService.updateContact(
+            mfToken,
+            check.mfId!,
+            contact.properties,
+            mfCompanyId
+          );
+        }
+      }
+    }
+
     return {
       success: true,
       action: checkedCompany.exists ? "updated" : "created",
       mfId,
+      linkedContacts: contactIds.length,
     };
   }
 }

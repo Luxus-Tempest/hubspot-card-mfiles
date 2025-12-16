@@ -17,5 +17,6 @@ router.get("/docs/:mfObjectId", mFilesController.getDocsByMfID);
 router.get("/docs/download/:docId/:fileId", mFilesController.downloadDocument);
 router.get("/docs/:docId/props", mFilesController.getDocumentProps);
 router.post("/docs/:docId/delete", mFilesController.deleteDocument);
+router.post("/test/:id", mFilesController.test);
 
 export default router;

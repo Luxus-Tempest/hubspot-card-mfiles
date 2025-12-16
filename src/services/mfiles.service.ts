@@ -62,6 +62,16 @@ export class MFilesService {
     return data;
   }
 
+  async getContactByIDs(token: string, hsObjID: string): Promise<unknown> {
+    const { data } = await this.http.get(
+      `objects/${MFIDs.Obj.Contact}?p1030=${hsObjID}`,
+      {
+        headers: this.authHeaders(token),
+      }
+    );
+    return data;
+  }
+
   async getObjectWithDocs(
     token: string,
     hsObjectID: string,
@@ -297,6 +307,7 @@ export class MFilesService {
     return data.ObjVer.ID;
   }
 
+  //--------------------------------------- COMPANY -----------------------------------------
   async checkIfCompanyExists(
     token: string,
     hsObjectId: string
@@ -387,7 +398,7 @@ export class MFilesService {
         },
       ],
     };
-  
+
     const { data } = await this.http.post(
       `objects/${MFIDs.Obj.Company}`,
       objectCreationInfo,
@@ -398,10 +409,193 @@ export class MFilesService {
         },
       }
     );
-  
+
     return data.ObjVer.ID;
   }
-  
+
+  //----------------------------- CONTACT TRANSACTIONS ----------------------------
+  async checkIfContactExists(
+    token: string,
+    hsContactId: string
+  ): Promise<{ exists: boolean; mfId?: number }> {
+    const { data } = await this.http.get(
+      `objects/${MFIDs.Obj.Contact}?p${MFIDs.Prop.hsObjectId}=${hsContactId}&p${MFIDs.Prop.hsObjectType}=0-1`,
+      { headers: this.authHeaders(token) }
+    );
+
+    const exists = Array.isArray(data?.Items) && data.Items.length > 0;
+
+    return exists
+      ? { exists: true, mfId: data.Items[0].ObjVer.ID }
+      : { exists: false };
+  }
+
+  async createContact(
+    token: string,
+    contact: {
+      firstname?: string;
+      lastname?: string;
+      email?: string;
+      phone?: string;
+      hs_object_id: string;
+    },
+    mfCompanyId: number
+  ): Promise<number> {
+    const objectCreationInfo = {
+      PropertyValues: [
+        {
+          PropertyDef: MFIDs.Prop.hsObjectId,
+          TypedValue: { DataType: 1, Value: contact.hs_object_id },
+        },
+        {
+          PropertyDef: MFIDs.Prop.hsObjectType,
+          TypedValue: { DataType: 1, Value: "0-1" },
+        },
+        {
+          PropertyDef: MFIDs.Prop.firstName,
+          TypedValue: { DataType: 1, Value: contact.firstname ?? "" },
+        },
+        {
+          PropertyDef: MFIDs.Prop.lastName,
+          TypedValue: { DataType: 1, Value: contact.lastname ?? "" },
+        },
+        {
+          PropertyDef: MFIDs.Prop.email,
+          TypedValue: { DataType: 1, Value: contact.email ?? "" },
+        },
+        {
+          PropertyDef: MFIDs.Prop.phone,
+          TypedValue: { DataType: 1, Value: contact.phone ?? "" },
+        },
+        {
+          // Association à la company
+          PropertyDef: MFIDs.Prop.Companies,
+          TypedValue: {
+            DataType: 10,
+            Lookups: [{ Item: mfCompanyId }],
+          },
+        },
+        {
+          PropertyDef: 100,
+          TypedValue: {
+            DataType: 9,
+            Lookup: { Item: MFIDs.Class.Contact },
+          },
+        },
+      ],
+    };
+
+    const { data } = await this.http.post(
+      `objects/${MFIDs.Obj.Contact}`,
+      objectCreationInfo,
+      { headers: this.authHeaders(token) }
+    );
+
+    return data.ObjVer.ID;
+  }
+
+  async updateContact(
+    token: string,
+    mfContactId: number,
+    contact: any,
+    mfCompanyId: number
+  ): Promise<number> {
+    const properties = [
+      {
+        PropertyDef: MFIDs.Prop.firstName,
+        TypedValue: { DataType: 1, Value: contact.firstname ?? "" },
+      },
+      {
+        PropertyDef: MFIDs.Prop.lastName,
+        TypedValue: { DataType: 1, Value: contact.lastname ?? "" },
+      },
+      {
+        PropertyDef: MFIDs.Prop.email,
+        TypedValue: { DataType: 1, Value: contact.email ?? "" },
+      },
+      {
+        PropertyDef: MFIDs.Prop.phone,
+        TypedValue: { DataType: 1, Value: contact.phone ?? "" },
+      },
+      {
+        PropertyDef: MFIDs.Prop.Companies,
+        TypedValue: {
+          DataType: 10,
+          Lookups: [{ Item: mfCompanyId }],
+        },
+      },
+    ];
+
+    const { data } = await this.http.post(
+      `objects/${MFIDs.Obj.Contact}/${mfContactId}/latest/properties.aspx`,
+      properties,
+      { headers: this.authHeaders(token) }
+    );
+
+    return data.ObjVer.ID;
+  }
+
+  async removeContactFromCompany(
+    token: string,
+    mfContactId: number,
+    mfCompanyId: number
+  ): Promise<number> {
+    const { data } = await this.http.get(
+      `objects/${MFIDs.Obj.Contact}/${mfContactId}/properties`,
+      { headers: this.authHeaders(token) }
+    );
+
+    // Filtrer les associations pour retirer cette company
+    const currentCompanies =
+      data?.PropertyValues?.find(
+        (p: any) => p.PropertyDef === MFIDs.Prop.Companies
+      )?.TypedValue?.Lookups ?? [];
+
+    const updatedCompanies = currentCompanies.filter(
+      (c: any) => c.Item !== mfCompanyId
+    );
+
+    const properties = [
+      {
+        PropertyDef: MFIDs.Prop.Companies,
+        TypedValue: { DataType: 10, Lookups: updatedCompanies },
+      },
+    ];
+
+    const { data: update } = await this.http.post(
+      `objects/${MFIDs.Obj.Contact}/${mfContactId}/latest/properties.aspx`,
+      properties,
+      { headers: this.authHeaders(token) }
+    );
+
+    return update?.ObjVer.ID;
+  }
+
+  async getContactsLinkedToCompany(
+    token: string,
+    mfCompanyId: string
+  ): Promise<number[]> {
+    const searchConditions = [
+      {
+        Expression: {
+          DataPropertyValuePropertyDef: MFIDs.Prop.Companies,
+        },
+        ConditionType: 5, // contains
+        TypedValue: {
+          DataType: 9,
+          Lookup: { Item: mfCompanyId },
+        },
+      },
+    ];
+
+    const { data } = await this.http.post(
+      `objects/${MFIDs.Obj.Contact}/search.aspx`,
+      searchConditions,
+      { headers: this.authHeaders(token) }
+    );
+
+    return data?.Items?.map((i: any) => i.ObjVer.ID) ?? [];
+  }
 }
 
 export const mFilesService = new MFilesService();

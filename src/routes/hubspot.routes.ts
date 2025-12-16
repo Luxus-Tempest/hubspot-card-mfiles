@@ -88,4 +88,5 @@ router.use(
   hsFilesController.synchronizeCompany
 );
 
+
 export default router;

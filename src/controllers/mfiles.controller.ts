@@ -65,6 +65,7 @@ export class MFilesController {
     if (!token) {
       return;
     }
+    // check if object exist. If not create it 
 
     try {
       const data = await mFilesService.getObjectWithDocs(token, req.params.hsObjectID, req.params.hsObjItemID );
@@ -186,6 +187,23 @@ export class MFilesController {
         req.params.docId
       );
       res.json(result);
+    } catch (error) {
+      handleError(error, res);
+    }
+  };
+
+  test = async (req: Request, res: Response) => {
+    const token = requireToken(req, res);
+    if (!token) {
+      return;
+    }
+
+    try {
+      const data = await mFilesService.getContactsLinkedToCompany(
+        token,
+        req.params.id
+      );
+      res.json(data);
     } catch (error) {
       handleError(error, res);
     }
